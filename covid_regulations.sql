@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 04, 2020 at 02:35 AM
+-- Generation Time: Dec 05, 2020 at 08:53 PM
 -- Server version: 5.7.24
 -- PHP Version: 7.4.1
 
@@ -30,16 +30,41 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `areas` (
   `ID` int(11) NOT NULL,
-  `name` varchar(30) NOT NULL
+  `name` varchar(30) NOT NULL,
+  `masks` tinyint(1) DEFAULT NULL,
+  `distancing` tinyint(1) DEFAULT NULL,
+  `temps` tinyint(1) DEFAULT NULL,
+  `sanitation` tinyint(1) DEFAULT NULL,
+  `details` varchar(100) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `areas`
 --
 
-INSERT INTO `areas` (`ID`, `name`) VALUES
-(1, 'Maryland'),
-(2, 'PG County');
+INSERT INTO `areas` (`ID`, `name`, `masks`, `distancing`, `temps`, `sanitation`, `details`) VALUES
+(1, 'Maryland', 1, 1, 1, NULL, 'Not on lockdown, six foot distance enforced in public areas.'),
+(2, 'PG County', NULL, NULL, NULL, NULL, ''),
+(3, 'Maine', 1, 1, 1, NULL, 'Not locked down, but six foot distance enforced in public.');
+
+-- --------------------------------------------------------
+
+--
+-- Stand-in structure for view `currentlocationentries`
+-- (See below for the actual view)
+--
+CREATE TABLE `currentlocationentries` (
+`ID` int(11)
+,`name` varchar(30)
+,`address` varchar(50)
+,`type` int(11)
+,`details` varchar(150)
+,`masks` tinyint(1)
+,`distancing` tinyint(1)
+,`sanitation` tinyint(1)
+,`temps` tinyint(1)
+,`creator` int(11)
+);
 
 -- --------------------------------------------------------
 
@@ -67,7 +92,8 @@ CREATE TABLE `entries` (
 --
 
 INSERT INTO `entries` (`ID`, `locationID`, `type`, `address`, `name`, `masks`, `distancing`, `temps`, `sanitation`, `details`, `timestamp`, `creator`) VALUES
-(1, 1, 1, '123 Main Street', 'Tony\'s Pizza', 1, 1, 0, 0, '', '2020-12-04 00:38:53', 1);
+(1, 1, 1, '123 Main Street', 'Tony\'s Pizza', 1, 1, 0, 0, '', '2020-12-04 00:38:53', 1),
+(2, 1, 1, '123 Main Street', 'Tony\'s Pizzeria', 0, 0, 0, 0, 'This is the second entry.', '2020-12-04 14:41:40', 1);
 
 -- --------------------------------------------------------
 
@@ -109,6 +135,25 @@ INSERT INTO `locations` (`ID`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `states`
+--
+
+CREATE TABLE `states` (
+  `ID` int(11) NOT NULL,
+  `areaID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `states`
+--
+
+INSERT INTO `states` (`ID`, `areaID`) VALUES
+(1, 1),
+(2, 3);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `types`
 --
 
@@ -145,6 +190,15 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`ID`, `email`, `password`, `area`, `isBlocked`) VALUES
 (1, 'lenhardt@umd.edu', 'goterps', NULL, 0);
 
+-- --------------------------------------------------------
+
+--
+-- Structure for view `currentlocationentries`
+--
+DROP TABLE IF EXISTS `currentlocationentries`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `currentlocationentries`  AS  select `entries`.`locationID` AS `ID`,`entries`.`name` AS `name`,`entries`.`address` AS `address`,`entries`.`type` AS `type`,`entries`.`details` AS `details`,`entries`.`masks` AS `masks`,`entries`.`distancing` AS `distancing`,`entries`.`sanitation` AS `sanitation`,`entries`.`temps` AS `temps`,`entries`.`creator` AS `creator` from (`entries` join (select `entries`.`locationID` AS `locationID`,max(`entries`.`timestamp`) AS `timestamp` from `entries` group by `entries`.`locationID`) `subquery` on(((`entries`.`locationID` = `subquery`.`locationID`) and (`entries`.`timestamp` = `subquery`.`timestamp`)))) ;
+
 --
 -- Indexes for dumped tables
 --
@@ -160,9 +214,9 @@ ALTER TABLE `areas`
 --
 ALTER TABLE `entries`
   ADD PRIMARY KEY (`ID`),
-  ADD KEY `locationIDFK` (`locationID`),
   ADD KEY `creatorFK` (`creator`),
-  ADD KEY `typeFK` (`type`);
+  ADD KEY `typeFK` (`type`),
+  ADD KEY `locationIDFK` (`locationID`);
 
 --
 -- Indexes for table `locationareas`
@@ -177,6 +231,13 @@ ALTER TABLE `locationareas`
 --
 ALTER TABLE `locations`
   ADD PRIMARY KEY (`ID`);
+
+--
+-- Indexes for table `states`
+--
+ALTER TABLE `states`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `statesAreaIDFK` (`areaID`);
 
 --
 -- Indexes for table `types`
@@ -199,13 +260,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `areas`
 --
 ALTER TABLE `areas`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `entries`
 --
 ALTER TABLE `entries`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `locationareas`
@@ -218,6 +279,12 @@ ALTER TABLE `locationareas`
 --
 ALTER TABLE `locations`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `states`
+--
+ALTER TABLE `states`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `types`
@@ -240,7 +307,7 @@ ALTER TABLE `users`
 --
 ALTER TABLE `entries`
   ADD CONSTRAINT `creatorFK` FOREIGN KEY (`creator`) REFERENCES `users` (`ID`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `locationIDFK` FOREIGN KEY (`locationID`) REFERENCES `locations` (`ID`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `locationIDFK` FOREIGN KEY (`locationID`) REFERENCES `locations` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `typeFK` FOREIGN KEY (`type`) REFERENCES `types` (`ID`) ON UPDATE CASCADE;
 
 --
@@ -249,6 +316,12 @@ ALTER TABLE `entries`
 ALTER TABLE `locationareas`
   ADD CONSTRAINT `locationAreasAreaIDFK` FOREIGN KEY (`areaID`) REFERENCES `areas` (`ID`) ON UPDATE CASCADE,
   ADD CONSTRAINT `locationAreaslocationIDFK` FOREIGN KEY (`locationID`) REFERENCES `locations` (`ID`) ON UPDATE CASCADE;
+
+--
+-- Constraints for table `states`
+--
+ALTER TABLE `states`
+  ADD CONSTRAINT `statesAreaIDFK` FOREIGN KEY (`areaID`) REFERENCES `areas` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `users`
