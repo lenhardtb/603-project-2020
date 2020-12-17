@@ -14,7 +14,35 @@
 <h3> Please click on a state to learn more about their COVID-19 regulations. </h3>
 
 <?php
+    function generateRow($row, $columns)
+    {
+        echo "<tr>";
 
+        
+        for($i = 0; $i < count($columns); $i++)
+        {
+            $val = $row[$columns[$i]];
+            echo "<td>";
+            if(is_null($val))
+            {
+                echo "[No Data]";
+            }
+            else if($val == "1")
+            {
+                echo "<img src=\"checkImage.jpg\" class=\"checkImage\"/>";
+            }
+            else if($val == "0")
+            {
+                echo "<img src=\"crossImage.jpg\" class=\"crossImage\"/>";
+            }
+            else
+            {
+               echo "".$val;
+            }
+            echo "</td>";
+        }
+        echo "</tr>";
+    }
     
     $servername = "localhost";
     $username = "public";
@@ -39,40 +67,13 @@
     {
       // output data of each row
       echo "<table> <tr> <th>State</th><th>Masks</th><th>6ft. Distance</th><th>Temp Checks</th><th>Sanitation Measures</th><th>Details</th></tr>";
-      while($row = $result->fetch_assoc()) 
+      while($row = $result->fetch_assoc())
       {
-        echo "<tr>";
-
-        $columns = array("name", "masks", "distancing", "temps", "sanitation", "details");
+          $stateID = $row["ID"];
         
-        for($i = 0; $i < 6; $i++)
-        {
-            echo "<td>";
-
-            if($columns[$i] == "name")
-            {
-                echo "<a href='/regulations.php?state=".$row["name"]."'>";
+          $columns = array("name", "masks", "distancing", "temps", "sanitation", "details");
         
-            }
-
-
-            if(is_null($row[$columns[$i]]))
-            {
-                echo "[No Data]";
-            }
-            else
-            {
-               echo $row[$columns[$i]];
-            }
-
-            if($columns[$i] == "name")
-            {
-                echo "</a>";
-            }
-
-            echo "</td>";
-        }
-        echo "</tr>";
+          generateRow($row, $columns);
       }
       echo "</table>";
     } 
