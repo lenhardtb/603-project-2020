@@ -35,6 +35,10 @@
             {
                 echo "<img src=\"crossImage.jpg\" class=\"crossImage\"/>";
             }
+            else if($columns[$i] == "name")
+            {
+               echo "<a href=\"regulations.php?state=".$val."\">".$val."</a>";
+            }
             else
             {
                echo "".$val;
