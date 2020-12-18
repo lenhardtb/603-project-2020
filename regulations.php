@@ -81,7 +81,7 @@
     } 
     else 
     {
-      echo "No results";
+      echo "<table><tr><th>No results</th></tr></table>";
     }
 
     //sub-areas table
@@ -104,7 +104,7 @@
     } 
     else 
     {
-      echo "No results";
+      echo "<table><tr><th>No results</th></tr></table>";
     }
 
     //child locations table
@@ -127,7 +127,7 @@
     } 
     else 
     {
-      echo "No results";
+      echo "<table><tr><th>No results</th></tr></table>";
     }
 
     $conn ->close();
